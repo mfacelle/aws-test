@@ -10,3 +10,5 @@ Use WASD to move. The player's current position is saved to DynamoDB.
 Arrow keys (and other keys like CMD) appear to cause the app to crash.  Not sure why, but ignoring for now, because this is just a learning exercise and I care more about the AWS/DB stuff.
 
 Other players are loaded at startup and refreshed from the DB every 1 second while the game is running.
+
+Currently is no way to create a new player from the app... need to manually do that in dynamoDB.  Functionality exists in the code, just need a way to start up a new player.  Maybe new command-line arg? Or provide no arg and prompt for a user id?
