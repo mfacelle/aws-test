@@ -25,6 +25,7 @@ type dynamoDB interface {
 	PutItem(context.Context, *dynamodb.PutItemInput, ...func(*dynamodb.Options)) (*dynamodb.PutItemOutput, error)
 	UpdateItem(context.Context, *dynamodb.UpdateItemInput, ...func(*dynamodb.Options)) (*dynamodb.UpdateItemOutput, error)
 	GetItem(context.Context, *dynamodb.GetItemInput, ...func(*dynamodb.Options)) (*dynamodb.GetItemOutput, error)
+	Scan(context.Context, *dynamodb.ScanInput, ...func(*dynamodb.Options)) (*dynamodb.ScanOutput, error)
 }
 
 type PlayerRepository struct {
@@ -113,11 +114,59 @@ func (repository *PlayerRepository) GetPlayer(ctx context.Context, id string) (P
 	if len(result.Item) == 0 {
 		return Player{}, fmt.Errorf("player %q was not found", id)
 	}
+	player, err := playerFromItem(result.Item)
+	if err != nil {
+		return Player{}, fmt.Errorf("decode player %q: %w", id, err)
+	}
+	return player, nil
+}
+
+func (repository *PlayerRepository) GetOtherPlayers(ctx context.Context, activeID string) ([]Player, error) {
+	activeID = strings.TrimSpace(activeID)
+	if activeID == "" {
+		return nil, fmt.Errorf("player ID is required")
+	}
+
+	var players []Player
+	var startKey map[string]types.AttributeValue
+	for {
+		result, err := repository.db.Scan(ctx, &dynamodb.ScanInput{
+			TableName:         aws.String(repository.tableName),
+			ExclusiveStartKey: startKey,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("scan players: %w", err)
+		}
+
+		for _, item := range result.Items {
+			player, err := playerFromItem(item)
+			if err != nil {
+				return nil, fmt.Errorf("decode scanned player: %w", err)
+			}
+			// could probably just always get all players, and save off a pointer to the "current" player?
+			// fine for now, but if I ever expand on this, might be worth doing
+			if player.ID != activeID {
+				players = append(players, player)
+			}
+		}
+
+		if len(result.LastEvaluatedKey) == 0 {
+			return players, nil
+		}
+		startKey = result.LastEvaluatedKey
+	}
+}
+
+func playerFromItem(item map[string]types.AttributeValue) (Player, error) {
+	idAttribute, ok := item["PlayerID"].(*types.AttributeValueMemberS)
+	if !ok || strings.TrimSpace(idAttribute.Value) == "" {
+		return Player{}, fmt.Errorf("missing PlayerID")
+	}
 	return Player{
-		ID:     result.Item["PlayerID"].(*types.AttributeValueMemberS).Value,
-		Health: number(result.Item["Health"]),
-		X:      number(result.Item["PositionX"]),
-		Y:      number(result.Item["PositionY"]),
+		ID:     idAttribute.Value,
+		Health: number(item["Health"]),
+		X:      number(item["PositionX"]),
+		Y:      number(item["PositionY"]),
 	}, nil
 }
 

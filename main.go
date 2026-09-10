@@ -28,8 +28,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("load player: %v", err)
 	}
+	otherPlayers, err := repository.GetOtherPlayers(ctx, player.ID)
+	if err != nil {
+		log.Fatalf("load other players: %v", err)
+	}
 
-	game := NewPlayerGame(ctx, repository, player)
+	game := NewPlayerGame(ctx, repository, player, otherPlayers)
 	ebiten.SetWindowSize(windowWidth, windowHeight)
 	ebiten.SetWindowTitle("Player Viewer - " + player.ID)
 	if err := ebiten.RunGame(game); err != nil {
