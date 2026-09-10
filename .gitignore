@@ -9,6 +9,7 @@
 *.dylib
 
 app
+aws-test
 *.pem
 
 # Test binary, built with `go test -c`

@@ -10,6 +10,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
 )
 
+// this class has player object representations as well as functions to handle
+// database operations for players
+
+// represents player information
 type Player struct {
 	ID     string
 	Health int
