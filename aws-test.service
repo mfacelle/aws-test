@@ -1,0 +1,16 @@
+[Unit]
+Description=AWS Test Go API
+After=network.target
+
+[Service]
+Type=simple
+User=ec2-user
+WorkingDirectory=/opt/aws-test
+ExecStart=/opt/aws-test/aws-test
+Environment=AWS_REGION=us-east-1
+Environment=TABLE_NAME=items
+Environment=PORT=8080
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
