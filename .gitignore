@@ -8,6 +8,9 @@
 *.so
 *.dylib
 
+bin
+bin/*
+
 app
 aws-test
 *.pem
